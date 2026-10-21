@@ -4,3 +4,4 @@
 api/*.local.php
 tools/node_modules/
 .env*.local
+.vercel
