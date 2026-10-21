@@ -16,6 +16,19 @@ const readSessionUser = () => {
 
 const QUEUE_ACTIONS = ['POS_ADD_ITEM', 'KOT_STATUS', 'STOCK_WASTE', 'SETTLE_INVOICE', 'EDIT_DISH', 'STOCK_BUY'];
 
+/**
+ * Sync endpoint. `index.html` sets window.BITE_CONFIG.serverApiUrl = '/api/sync'
+ * so the request stays relative and resolves on Vercel (and in local dev) alike.
+ */
+export const SYNC_ENDPOINT = '/api/sync';
+
+function resolveEndpoint() {
+  const configured =
+    (typeof window !== 'undefined' && window.BITE_CONFIG && window.BITE_CONFIG.serverApiUrl) ||
+    (typeof globalThis !== 'undefined' && globalThis.BITE_CONFIG && globalThis.BITE_CONFIG.serverApiUrl);
+  return typeof configured === 'string' && configured.trim() ? configured.trim() : SYNC_ENDPOINT;
+}
+
 const seedPendingQueue = () =>
   Array.from({ length: 18 }, (_, index) => ({
     id: `ACT-SEED-${String(index + 1).padStart(2, '0')}`,
@@ -29,6 +42,7 @@ class SyncStore {
   constructor() {
     this.listeners = [];
     this.pushTimer = null;
+    this.suppressNotify = false;
     this.state = this.loadState();
     window.addEventListener('online', () => {
       if (!this.state.isOfflineSim) this.syncNow();
@@ -74,13 +88,31 @@ class SyncStore {
     return initial;
   }
 
-  saveState() {
+  /**
+   * Persist the restaurant state.
+   *
+   * @param {boolean} immediate  When true the state is pushed to MongoDB right
+   *                             away instead of waiting for the debounce.
+   * @param {string}  reason     Label sent to the server for auditability.
+   * @returns {Promise|null}     Resolves with the push result when immediate.
+   */
+  saveState(immediate = false, reason = 'STATE_SYNC') {
     // Restaurant data persists; the operator identity is stored in sessionStorage only.
     const persisted = JSON.stringify({ ...this.state, currentUser: null });
     localStorage.setItem(STORAGE_KEY, persisted);
     localStorage.setItem(LEGACY_STORAGE_KEY, persisted);
     this.syncSessionUser(this.state.currentUser);
     this.notify();
+
+    if (!immediate) return null;
+
+    // Flush the debounce so an immediate save is never superseded by a later one.
+    if (this.pushTimer) {
+      clearTimeout(this.pushTimer);
+      this.pushTimer = null;
+    }
+    if (this.isOffline()) return Promise.resolve({ ok: false, offline: true });
+    return this.pushStateToServer(reason);
   }
 
   /**
@@ -89,13 +121,7 @@ class SyncStore {
    * instead of waiting for the debounce.
    */
   persistUserUpdate(reason = 'USER_UPDATED') {
-    if (this.pushTimer) {
-      clearTimeout(this.pushTimer);
-      this.pushTimer = null;
-    }
-    this.syncSessionUser(this.state.currentUser);
-    if (this.isOffline()) return Promise.resolve({ ok: false, offline: true });
-    return this.pushStateToServer(reason);
+    return this.saveState(true, reason);
   }
 
   /** Mirror the signed-in operator into sessionStorage (cleared on tab close). */
@@ -174,10 +200,13 @@ class SyncStore {
     return { users, categories, kitchenStations, inventory, menu, tables, invoices };
   }
 
-  /** Push the full state to /api/sync. Local storage stays authoritative when offline. */
+  /** Push the full state to the server. Local storage stays authoritative when offline. */
   async pushStateToServer(reason = 'STATE_SYNC') {
+    const endpoint = resolveEndpoint();
     try {
-      const response = await fetch('/api/sync', {
+      // No origin check here: a relative '/api/sync' must still be POSTed so the
+      // state reaches MongoDB on Vercel.
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ state: this.serverState(), reason })
@@ -205,8 +234,9 @@ class SyncStore {
    */
   async hydrateFromServer() {
     const keys = Object.keys(this.serverState());
+    const endpoint = resolveEndpoint();
     try {
-      const response = await fetch('/api/sync', { headers: { Accept: 'application/json' } });
+      const response = await fetch(endpoint, { headers: { Accept: 'application/json' }, cache: 'no-store' });
       if (!response.ok) return { hydrated: false };
       const payload = await response.json();
       const remote = payload && payload.state;
@@ -229,7 +259,14 @@ class SyncStore {
         ? this.state.users.find((user) => user.id === rememberedId) || this.state.users[0] || null
         : null;
 
-      this.saveState();
+      // Hydration must not trigger a re-render mid-boot; the app renders once
+      // the persisted state is in place.
+      this.suppressNotify = true;
+      try {
+        this.saveState();
+      } finally {
+        this.suppressNotify = false;
+      }
       return { hydrated: true };
     } catch (_) {
       return { hydrated: false, offline: true };
@@ -241,6 +278,7 @@ class SyncStore {
   }
 
   notify() {
+    if (this.suppressNotify) return;
     this.listeners.forEach((fn) => fn(this.state));
   }
 }

@@ -180,6 +180,13 @@
   <div id="modal-root"></div>
   <div id="thermal-receipt-area" class="hidden"></div>
 
+  <!-- Server sync configuration: relative path so it resolves on Vercel and in local dev -->
+  <script>
+    window.BITE_CONFIG = Object.assign({}, window.BITE_CONFIG, {
+      serverApiUrl: '/api/sync'
+    });
+  </script>
+
   <script type="module" src="/src/app.js"></script>
 </body>
 </html>

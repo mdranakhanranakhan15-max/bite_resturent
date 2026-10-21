@@ -285,6 +285,20 @@ renderDoodles(document.getElementById('doodle-wall'));
 bindGlobalControls();
 tickClock();
 setInterval(tickClock, 15000);
-renderActiveView();
-store.hydrateFromServer();
+
+/**
+ * Boot sequence: hydrate from MongoDB *before* the first render so the login
+ * screen and every view show the persisted users/restaurant state (not the
+ * bundled seed). Falls back to the local cache when the API is unreachable.
+ */
+async function boot() {
+  try {
+    await store.hydrateFromServer();
+  } catch (error) {
+    console.warn('Server hydration skipped:', error);
+  }
+  renderActiveView();
+}
+
+boot();
 

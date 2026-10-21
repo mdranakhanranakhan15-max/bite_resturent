@@ -366,7 +366,7 @@ function openStaffModal(user) {
     }, { userId: user.id, username, permissions });
 
     // Persist the edited profile immediately (localStorage + sessionStorage + MongoDB).
-    store.persistUserUpdate('USER_UPDATED');
+    store.saveState(true, 'USER_UPDATED');
 
     close();
   };
@@ -527,6 +527,8 @@ export function renderStaffView(container) {
         const user = state.users.find((entry) => entry.id === userId);
         if (user) user.role = role;
       }, { userId, role });
+      // Persist the role change immediately (localStorage + sessionStorage + MongoDB).
+      store.saveState(true, 'USER_UPDATED');
     };
   });
 
@@ -541,6 +543,8 @@ export function renderStaffView(container) {
         const user = state.users.find((entry) => entry.id === userId);
         if (user) user.active = !user.active;
       }, { userId });
+      // Persist the status change immediately (localStorage + sessionStorage + MongoDB).
+      store.saveState(true, 'USER_UPDATED');
     };
   });
 
@@ -562,6 +566,9 @@ export function renderStaffView(container) {
       permissions: MODULES.map((m) => m.key)
     };
     store.mutate('ADD_USER', (state) => { state.users.push(newUser); }, newUser);
+
+    // Persist the new staff profile immediately (localStorage + sessionStorage + MongoDB).
+    store.saveState(true, 'USER_UPDATED');
   };
 }
 

@@ -16,8 +16,8 @@
       #thermal-receipt-area { position: fixed; left: 0; top: 0; width: 80mm; padding: 12px; background: #fff; color: #000; }
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-CyOCLK7j.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BRDR0uks.css">
+  <script type="module" crossorigin src="/assets/index-By09wwvI.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DhX4eJPs.css">
 </head>
 <body class="app-bg min-h-screen overflow-x-hidden text-[#1c1a17]">
 
@@ -29,7 +29,7 @@
   <div id="login-root"></div>
 
   <!-- Centered app window -->
-  <div class="app-shell" id="app-shell">
+  <div class="app-shell app-center-shell" id="app-shell">
     <!-- Left sidebar -->
     <aside class="sidebar" aria-label="Workspace">
       <div>
@@ -181,6 +181,13 @@
   <!-- Modal & receipt roots -->
   <div id="modal-root"></div>
   <div id="thermal-receipt-area" class="hidden"></div>
+
+  <!-- Server sync configuration: relative path so it resolves on Vercel and in local dev -->
+  <script>
+    window.BITE_CONFIG = Object.assign({}, window.BITE_CONFIG, {
+      serverApiUrl: '/api/sync'
+    });
+  </script>
 
 </body>
 </html>
