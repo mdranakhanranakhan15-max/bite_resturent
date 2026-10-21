@@ -1,0 +1,15 @@
+# Bite POS — Apache hardening for a project-root document root.
+Options -Indexes
+AddDefaultCharset utf-8
+AddType application/manifest+json .webmanifest
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# Never serve source dumps, logs or dotfiles.
+<FilesMatch "(^\.|\.sql$|\.md$|\.sh$|\.log$|\.json$)">
+  Require all denied
+</FilesMatch>

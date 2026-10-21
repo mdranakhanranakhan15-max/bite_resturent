@@ -1,0 +1,155 @@
+{
+  "action": "push",
+  "batch": [
+    {
+      "id": "q_smoke_cat",
+      "type": "CATEGORY_UPSERT",
+      "payload": {
+        "category": {
+          "id": "cat_smoke",
+          "name": "Smoke Test",
+          "letter": "ST",
+          "tint": "#f1e8d3",
+          "sort": 99,
+          "createdAt": "2026-10-20T10:00:00Z",
+          "updatedAt": "2026-10-20T10:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "q_smoke_inv",
+      "type": "INVENTORY_PUSH",
+      "payload": {
+        "item": {
+          "id": "inv_smoke",
+          "name": "Smoke Ribeye",
+          "unit": "kg",
+          "stock": 5,
+          "minStock": 2,
+          "unitCost": 3.5,
+          "supplier": "Smoke Supplier",
+          "updatedAt": "2026-10-20T10:00:00Z"
+        },
+        "log": {
+          "id": "log_smoke",
+          "delta": 5,
+          "balance": 5,
+          "reason": "Opening stock",
+          "ref": "TEST",
+          "userId": "u_smoke",
+          "at": "2026-10-20T10:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "q_smoke_user",
+      "type": "USER_UPSERT",
+      "payload": {
+        "user": {
+          "id": "u_smoke",
+          "name": "Smoke Chef",
+          "role": "chef",
+          "pin": "9999",
+          "shift": "Evening",
+          "phone": "+1 555 0199",
+          "email": "smoke@bite.test",
+          "active": true,
+          "createdAt": "2026-10-20T10:00:00Z",
+          "updatedAt": "2026-10-20T10:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "q_smoke_menu",
+      "type": "MENU_UPSERT",
+      "payload": {
+        "item": {
+          "id": "m_smoke",
+          "categoryId": "cat_smoke",
+          "name": "Smoke Dish",
+          "description": "API smoke test dish",
+          "price": 9.5,
+          "station": "Grill",
+          "available": true,
+          "sort": 99,
+          "recipe": [{ "inventoryId": "inv_smoke", "qty": 0.25 }],
+          "createdAt": "2026-10-20T10:00:00Z",
+          "updatedAt": "2026-10-20T10:00:00Z"
+        }
+      }
+    },
+    {
+      "id": "q_smoke_order",
+      "type": "ORDER_UPSERT",
+      "payload": {
+        "order": {
+          "id": "ord_smoke",
+          "orderNo": "ORD-SMOKE",
+          "tableId": "T-01",
+          "guests": 2,
+          "waiterId": "u_smoke",
+          "customerName": "API Test",
+          "note": "Round trip",
+          "discount": 0,
+          "createdAt": "2026-10-20T10:00:00Z",
+          "updatedAt": "2026-10-20T10:01:00Z",
+          "sentAt": "2026-10-20T10:00:30Z",
+          "items": [
+            {
+              "lineId": "line_smoke",
+              "menuId": "m_smoke",
+              "name": "Smoke Dish",
+              "price": 9.5,
+              "qty": 2,
+              "notes": "No salt",
+              "status": "cooking",
+              "sentAt": "2026-10-20T10:00:30Z",
+              "stockDeducted": true,
+              "categoryId": "cat_smoke"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "q_smoke_invoice",
+      "type": "INVOICE_CREATED",
+      "payload": {
+        "invoice": {
+          "id": "inv_smoke",
+          "invoiceNo": "BT-SMOKE-1",
+          "at": "2026-10-20T10:05:00Z",
+          "tableId": "T-01",
+          "tableName": "T-01",
+          "guests": 2,
+          "orderId": "ord_smoke",
+          "orderNo": "ORD-SMOKE",
+          "waiterId": "u_smoke",
+          "waiterName": "Smoke Chef",
+          "items": [
+            {
+              "lineId": "line_smoke",
+              "menuId": "m_smoke",
+              "name": "Smoke Dish",
+              "price": 9.5,
+              "qty": 2,
+              "categoryId": "cat_smoke"
+            }
+          ],
+          "subtotal": 19,
+          "discount": 0,
+          "vatPct": 5,
+          "vat": 0.95,
+          "servicePct": 5,
+          "service": 0.95,
+          "total": 20.9,
+          "method": "cash",
+          "cashReceived": 25,
+          "change": 4.1,
+          "cashierId": "u_smoke",
+          "cashierName": "Smoke Chef"
+        }
+      }
+    }
+  ]
+}

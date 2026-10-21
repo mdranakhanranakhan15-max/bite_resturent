@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bite POS">
+  <rect width="512" height="512" fill="#14161c"/>
+  <circle cx="256" cy="256" r="184" fill="#e07a3f"/>
+  <g fill="none" stroke="#14161c" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M186 144v100a31 31 0 0 0 62 0v-100"/>
+    <path d="M217 275v94"/>
+    <path d="M330 144c-23 29-31 55-31 83 0 22 13 32 31 32s31-10 31-32c0-28-8-54-31-83z"/>
+    <path d="M330 259v110"/>
+  </g>
+</svg>

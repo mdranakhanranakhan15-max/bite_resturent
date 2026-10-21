@@ -1,0 +1,6 @@
+# Bite local artifacts
+.DS_Store
+*.log
+api/*.local.php
+tools/node_modules/
+.env*.local

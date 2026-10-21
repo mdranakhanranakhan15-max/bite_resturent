@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111215" />
+  <title>Bite — POS &amp; Kitchen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    @media print {
+      body * { visibility: hidden !important; }
+      #thermal-receipt-area, #thermal-receipt-area * { visibility: visible !important; }
+      #thermal-receipt-area { position: fixed; left: 0; top: 0; width: 80mm; padding: 12px; background: #fff; color: #000; }
+    }
+  </style>
+</head>
+<body class="app-bg min-h-screen overflow-x-hidden text-[#1c1a17]">
+
+  <!-- Hand-drawn chalk food doodles scattered across the wallpaper -->
+  <div id="doodle-wall" class="fixed inset-0 chalk-gutters" aria-hidden="true"></div>
+
+
+  <!-- Fullscreen PIN login (only rendered while signed out) -->
+  <div id="login-root"></div>
+
+  <!-- Centered app window -->
+  <div class="app-shell" id="app-shell">
+    <!-- Left sidebar -->
+    <aside class="sidebar" aria-label="Workspace">
+      <div>
+        <div class="flex items-center gap-2.5 px-1">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-gradient-to-br from-[#f59e0b] to-[#ea580c] shadow-[0_8px_18px_-8px_rgba(234,88,12,0.95)]">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#231a12" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 3v6a2 2 0 0 0 2 2 2 2 0 0 0 2-2V3" />
+              <path d="M8 11v10" />
+              <path d="M18 3c-1.3 1.5-2 3.5-2 5.5 0 1.8.9 2.6 2 2.6h1V3h-1Z" />
+              <path d="M19 11v10" />
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <p class="serif text-[21px] font-bold leading-none text-[#f4efe4]">Bite</p>
+            <p class="mt-[5px] text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8e8d8a]">POS • KITCHEN</p>
+          </div>
+        </div>
+
+        <p class="mb-2 mt-7 px-1.5 text-[8px] font-semibold uppercase tracking-[0.2em] text-[#6d6c69]">Workspace</p>
+        <nav id="sidebar-nav" class="space-y-1">
+          <button type="button" data-tab="pos" class="navlink">
+            <svg class="nav-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.6" /><rect x="14" y="3" width="7" height="7" rx="1.6" />
+              <rect x="3" y="14" width="7" height="7" rx="1.6" /><rect x="14" y="14" width="7" height="7" rx="1.6" />
+            </svg>
+            <span>Tables &amp; POS</span>
+            <span id="tables-badge" class="nav-badge">2</span>
+          </button>
+
+          <button type="button" data-tab="kitchen" class="navlink">
+            <svg class="nav-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21a1 1 0 0 0 1-1v-5.4c0-.5.3-.8.7-1a4 4 0 0 0-2.1-7.6 5 5 0 0 0-9.2 0 4 4 0 0 0-2.1 7.6c.4.2.7.5.7 1V20a1 1 0 0 0 1 1Z" />
+              <path d="M6 17h12" />
+            </svg>
+            <span>Kitchen KOT</span>
+            <span id="kitchen-badge" class="nav-badge nav-badge-amber">3</span>
+          </button>
+
+          <button type="button" data-tab="menu" class="navlink active">
+            <svg class="nav-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2Z" />
+              <path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7Z" />
+            </svg>
+            <span>Food menu</span>
+            <span id="menu-badge" class="nav-badge nav-badge-subtle">20</span>
+          </button>
+
+          <button type="button" data-tab="inventory" class="navlink">
+            <svg class="nav-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m7.5 4.3 9 5.1" />
+              <path d="M21 8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+              <path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
+            </svg>
+            <span>Inventory</span>
+            <span id="inventory-badge" class="nav-badge">5</span>
+          </button>
+
+          <button type="button" data-tab="bills" class="navlink">
+            <svg class="nav-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 2h14v20l-2.3-1.6-2.4 1.6-2.3-1.6L9.7 22 7.3 20.4 5 22V2Z" />
+              <path d="M9 7h6M9 11h6M9 15h4" />
+            </svg>
+            <span>Bills &amp; analytics</span>
+          </button>
+
+          <button type="button" data-tab="staff" class="navlink">
+            <svg class="nav-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span>Staff &amp; Roles</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="space-y-3">
+        <!-- Sync status card -->
+        <div class="rounded-2xl border border-white/5 bg-[#1f2229] p-3">
+          <div class="flex items-start gap-2">
+            <span id="sync-dot" class="mt-[3px] h-[7px] w-[7px] shrink-0 rounded-full bg-[#f59e0b] shadow-[0_0_0_3px_rgba(245,158,11,0.14)]"></span>
+            <div class="min-w-0">
+              <p id="sync-title" class="text-[10.5px] font-semibold leading-tight text-[#e9e5dc]">Sync needs attention</p>
+              <p id="sync-subtitle" class="mt-1 text-[8.5px] leading-[1.4] text-[#8e8d8a]">18 queued · not synced to server yet</p>
+            </div>
+          </div>
+          <button type="button" id="sync-now-btn" class="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[10px] bg-[#f6f1e7] py-2 text-[10px] font-semibold text-[#1a1917] transition hover:bg-white">
+            <span class="text-[12px] leading-none">↻</span> Sync <span id="sync-btn-count">18</span>
+          </button>
+        </div>
+
+        <!-- Signed-in user -->
+        <div class="rounded-2xl bg-[#1f2229] p-3">
+          <div class="flex items-center gap-2.5">
+            <span id="user-avatar" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f6f1e7] text-[9.5px] font-bold text-[#1a1917]">ZK</span>
+            <div class="min-w-0 flex-1">
+              <p id="user-name" class="truncate text-[10.5px] font-semibold text-[#f0ece2]">Zayan Khan</p>
+              <p id="user-role" class="truncate text-[8.5px] text-[#8e8d8a]">Admin · Full access</p>
+            </div>
+          </div>
+          <button type="button" id="logout-btn" class="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-rose-500/30 bg-rose-500/15 py-2 text-[10px] font-semibold text-rose-300 transition hover:bg-rose-500/25">Logout</button>
+        </div>
+      </div>
+    </aside>
+
+
+    <!-- Right main panel -->
+    <section class="flex min-w-0 flex-1 flex-col bg-[#f5efe4]">
+      <!-- Top header bar -->
+      <header class="flex shrink-0 items-center justify-between gap-4 border-b border-[#e6dec8] bg-[#faf6ee] px-7 py-3.5">
+        <div class="min-w-0">
+          <p id="crumb" class="truncate text-[9px] font-semibold uppercase tracking-[0.18em] text-[#c2410c]">🍴 MENU &amp; RECIPES</p>
+          <h1 id="crumb-title" class="serif truncate text-[19px] font-bold leading-tight text-[#1c1a17]">Food menu</h1>
+          <button type="button" id="header-manage-options" class="manage-btn" hidden>⚙️ Manage</button>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-2.5">
+          <div class="hidden text-right leading-tight lg:block">
+            <p id="live-clock" class="text-[12px] font-semibold tracking-tight text-[#1c1a17]">11:18 PM</p>
+            <p id="live-date" class="text-[9px] text-[#8a8578]">Tue, Oct 20</p>
+          </div>
+
+          <div class="flex items-center gap-2 rounded-full border border-[#e6dec8] bg-white px-3 py-1.5">
+            <span class="text-[10px] text-[#6b665a]">Offline sim</span>
+            <button type="button" id="offline-sim-toggle" class="switch" role="switch" aria-checked="false" data-on="false" aria-label="Simulate offline mode">
+              <span></span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1.5 rounded-full border border-[#e6dec8] bg-white px-3 py-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8a8578" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.5 19a4.5 4.5 0 0 0 .5-9 6 6 0 0 0-11.6 1.5A3.5 3.5 0 0 0 6.5 19h11Z" />
+            </svg>
+            <span class="text-[10px] text-[#6b665a]">Pending sync</span>
+            <span id="pending-sync-badge" class="flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#f59e0b] px-1 text-[9px] font-bold text-[#1a1917]">18</span>
+          </div>
+
+          <span id="header-avatar" class="flex h-7 w-7 items-center justify-center rounded-full bg-[#efe6d6] text-[9px] font-bold text-[#1c1a17] ring-1 ring-[#e0d5c0]">ZK</span>
+          <button type="button" id="header-logout-btn" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30">Logout</button>
+        </div>
+      </header>
+
+      <!-- Dynamic viewport -->
+      <main id="app-viewport" class="scroll-thin flex-1 overflow-y-auto px-7 py-6"></main>
+    </section>
+  </div>
+
+  <!-- Modal & receipt roots -->
+  <div id="modal-root"></div>
+  <div id="thermal-receipt-area" class="hidden"></div>
+
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>
+
