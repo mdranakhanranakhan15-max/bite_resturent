@@ -245,12 +245,13 @@ function renderLoginScreen() {
       pinInput.value = '';
       return;
     }
-    localStorage.setItem('bite_active_user', user.id);
+    sessionStorage.setItem('bite_current_user', JSON.stringify(user));
     store.mutate('SWITCH_USER', (state) => { state.currentUser = state.users.find((entry) => entry.id === user.id); }, { userId: user.id });
   };
 }
 
 function handleLogout() {
+  sessionStorage.removeItem('bite_current_user');
   localStorage.removeItem('bite_active_user');
   store.mutate('LOGOUT', (state) => { state.currentUser = null; });
 }

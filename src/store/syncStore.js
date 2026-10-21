@@ -1,6 +1,17 @@
 import { SEED_DATA } from '../data/seed.js';
 
 const STORAGE_KEY = 'bite_pos_v3';
+const SESSION_USER_KEY = 'bite_current_user';
+
+/** Session-only auth: the signed-in operator lives in sessionStorage, never localStorage. */
+const readSessionUser = () => {
+  try {
+    const raw = typeof window !== 'undefined' ? sessionStorage.getItem(SESSION_USER_KEY) : null;
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+};
 
 const QUEUE_ACTIONS = ['POS_ADD_ITEM', 'KOT_STATUS', 'STOCK_WASTE', 'SETTLE_INVOICE', 'EDIT_DISH', 'STOCK_BUY'];
 
@@ -26,15 +37,16 @@ class SyncStore {
   }
 
   loadState() {
+    // Auth is session-scoped: a fresh tab (or a closed one) always starts signed out.
+    const sessionUser = readSessionUser();
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         const users = Array.isArray(parsed.users) ? parsed.users : SEED_DATA.users;
-        // An explicit null means the operator signed out — stay on the login screen.
-        const currentUser = parsed.currentUser === null
-          ? null
-          : users.find((user) => user.id === parsed.currentUser?.id) || users[0] || SEED_DATA.users[0];
+        const currentUser = sessionUser
+          ? users.find((user) => user.id === sessionUser.id) || sessionUser
+          : null;
         return {
           ...SEED_DATA,
           ...parsed,
@@ -50,14 +62,26 @@ class SyncStore {
     const initial = structuredClone(SEED_DATA);
     initial.isOfflineSim = false;
     initial.pendingQueue = seedPendingQueue();
-    initial.currentUser = initial.users[0];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    initial.currentUser = sessionUser;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...initial, currentUser: null }));
     return initial;
   }
 
   saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    // Restaurant data persists; the operator identity is stored in sessionStorage only.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...this.state, currentUser: null }));
+    this.syncSessionUser(this.state.currentUser);
     this.notify();
+  }
+
+  /** Mirror the signed-in operator into sessionStorage (cleared on tab close). */
+  syncSessionUser(user) {
+    try {
+      if (user) sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
+      else sessionStorage.removeItem(SESSION_USER_KEY);
+    } catch (_) {
+      // Storage may be unavailable (private mode) — the in-memory state still works.
+    }
   }
 
   isOffline() {
