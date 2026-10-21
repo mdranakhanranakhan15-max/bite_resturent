@@ -1,6 +1,7 @@
 import { SEED_DATA } from '../data/seed.js';
 
-const STORAGE_KEY = 'bite_pos_v3';
+const STORAGE_KEY = 'bite_restaurant_erp_v1';
+const LEGACY_STORAGE_KEY = 'bite_pos_v3';
 const SESSION_USER_KEY = 'bite_current_user';
 
 /** Session-only auth: the signed-in operator lives in sessionStorage, never localStorage. */
@@ -40,10 +41,14 @@ class SyncStore {
     // Auth is session-scoped: a fresh tab (or a closed one) always starts signed out.
     const sessionUser = readSessionUser();
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      // Prefer the current key, but migrate any pre-existing legacy cache.
+      const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        const users = Array.isArray(parsed.users) ? parsed.users : SEED_DATA.users;
+        // CRITICAL: never replace edited staff with the bundled seed data.
+        const users = Array.isArray(parsed.users) && parsed.users.length > 0
+          ? parsed.users
+          : SEED_DATA.users;
         const currentUser = sessionUser
           ? users.find((user) => user.id === sessionUser.id) || sessionUser
           : null;
@@ -63,15 +68,34 @@ class SyncStore {
     initial.isOfflineSim = false;
     initial.pendingQueue = seedPendingQueue();
     initial.currentUser = sessionUser;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...initial, currentUser: null }));
+    const fresh = JSON.stringify({ ...initial, currentUser: null });
+    localStorage.setItem(STORAGE_KEY, fresh);
+    localStorage.setItem(LEGACY_STORAGE_KEY, fresh);
     return initial;
   }
 
   saveState() {
     // Restaurant data persists; the operator identity is stored in sessionStorage only.
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...this.state, currentUser: null }));
+    const persisted = JSON.stringify({ ...this.state, currentUser: null });
+    localStorage.setItem(STORAGE_KEY, persisted);
+    localStorage.setItem(LEGACY_STORAGE_KEY, persisted);
     this.syncSessionUser(this.state.currentUser);
     this.notify();
+  }
+
+  /**
+   * Force an immediate staff-profile save: localStorage is already written by
+   * saveState(); this refreshes the session user and pushes to MongoDB now
+   * instead of waiting for the debounce.
+   */
+  persistUserUpdate(reason = 'USER_UPDATED') {
+    if (this.pushTimer) {
+      clearTimeout(this.pushTimer);
+      this.pushTimer = null;
+    }
+    this.syncSessionUser(this.state.currentUser);
+    if (this.isOffline()) return Promise.resolve({ ok: false, offline: true });
+    return this.pushStateToServer(reason);
   }
 
   /** Mirror the signed-in operator into sessionStorage (cleared on tab close). */
@@ -151,12 +175,12 @@ class SyncStore {
   }
 
   /** Push the full state to /api/sync. Local storage stays authoritative when offline. */
-  async pushStateToServer() {
+  async pushStateToServer(reason = 'STATE_SYNC') {
     try {
       const response = await fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state: this.serverState() })
+        body: JSON.stringify({ state: this.serverState(), reason })
       });
       return { ok: response.ok };
     } catch (_) {

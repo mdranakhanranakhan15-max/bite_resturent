@@ -365,6 +365,9 @@ function openStaffModal(user) {
       if (state.currentUser && state.currentUser.id === target.id) state.currentUser = target;
     }, { userId: user.id, username, permissions });
 
+    // Persist the edited profile immediately (localStorage + sessionStorage + MongoDB).
+    store.persistUserUpdate('USER_UPDATED');
+
     close();
   };
 }
