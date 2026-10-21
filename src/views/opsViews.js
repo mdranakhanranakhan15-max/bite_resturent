@@ -400,10 +400,12 @@ export function renderStaffView(container) {
           </div>
         </td>
         <td><span class="badge-pill ${user.active ? 'badge-ok' : 'badge-neutral'}">${user.active ? 'Active' : 'Disabled'}</span></td>
-        <td class="space-x-1 text-right">
-          ${user.active ? `<button type="button" data-pin-login="${user.id}" class="mini-btn">PIN login</button>` : ''}
-          <button type="button" data-edit-user="${user.id}" class="mini-btn">Edit</button>
-          <button type="button" data-toggle-user="${user.id}" class="mini-btn ${user.active ? 'red' : 'green'}">${user.active ? 'Disable' : 'Enable'}</button>
+        <td class="text-right">
+          <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
+            ${user.active ? `<button type="button" data-pin-login="${user.id}" class="mini-btn shrink-0">PIN login</button>` : ''}
+            <button type="button" data-edit-user="${user.id}" class="mini-btn shrink-0">Edit</button>
+            <button type="button" data-toggle-user="${user.id}" class="mini-btn shrink-0 ${user.active ? 'red' : 'green'}">${user.active ? 'Disable' : 'Enable'}</button>
+          </div>
         </td>
       </tr>
     `;

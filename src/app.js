@@ -188,7 +188,10 @@ function renderLoginScreen() {
           </div>
           <div class="field">
             <label for="login-pin">4-digit PIN</label>
-            <input id="login-pin" required maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="••••" />
+            <div class="relative">
+              <input id="login-pin" type="password" required maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="••••" class="pr-10 tracking-widest" style="padding-right: 38px; letter-spacing: 0.22em;" />
+              <button type="button" id="toggle-pin-visibility" aria-label="Show PIN" aria-pressed="false" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#8a8578] transition hover:text-[#4c473d]">👁️</button>
+            </div>
           </div>
           <div class="login-keypad" role="group" aria-label="Touchscreen PIN keypad">
             ${keypad.map((key) => `<button type="button" data-pin-key="${key}">${key}</button>`).join('')}
@@ -213,6 +216,20 @@ function renderLoginScreen() {
       errorBox.classList.remove('show');
     };
   });
+
+  // PIN visibility toggle — masked (••••) by default.
+  const pinToggle = document.getElementById('toggle-pin-visibility');
+  let showPin = false;
+  if (pinToggle) {
+    pinToggle.onclick = () => {
+      showPin = !showPin;
+      pinInput.type = showPin ? 'text' : 'password';
+      pinToggle.textContent = showPin ? '🙈' : '👁️';
+      pinToggle.setAttribute('aria-pressed', String(showPin));
+      pinToggle.setAttribute('aria-label', showPin ? 'Hide PIN' : 'Show PIN');
+      pinInput.focus();
+    };
+  }
 
   document.getElementById('login-form').onsubmit = (event) => {
     event.preventDefault();
