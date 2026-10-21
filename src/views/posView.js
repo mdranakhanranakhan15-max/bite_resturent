@@ -195,7 +195,7 @@ export function renderPosView(container, uiState, rerender) {
       <p class="section-label">Floor plan</p>
       <p class="text-[8.5px] uppercase tracking-[0.14em] text-[#a39c8d]">${activeTable.name} selected</p>
     </div>
-    <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">${floorMarkup}</div>
+    <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" id="posTableStrip">${floorMarkup}</div>
   `;
 
 
@@ -215,10 +215,10 @@ export function renderPosView(container, uiState, rerender) {
             <span class="badge-pill badge-neutral">${dishes.length} dishes</span>
           </div>
           <div class="mt-3 flex flex-wrap gap-1.5">${categoryMarkup}</div>
-          <div class="scroll-thin mt-3 grid max-h-[330px] grid-cols-2 gap-2.5 overflow-y-auto pr-1">${dishMarkup}</div>
+          <div class="scroll-thin mt-3 grid max-h-[330px] grid-cols-2 gap-2.5 overflow-y-auto pr-1" id="posMenuGrid">${dishMarkup}</div>
         </div>
 
-        <div class="col-span-1 flex flex-col justify-between p-4 warm-card lg:col-span-5">
+        <div class="col-span-1 flex flex-col justify-between p-4 warm-card lg:col-span-5" id="posBilling">
           <div>
             <div class="flex items-start justify-between gap-2 border-b border-[#ece4d6] pb-3">
               <div>
@@ -257,6 +257,17 @@ export function renderPosView(container, uiState, rerender) {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Mobile quick checkout bar (sticky, phones only) -->
+      <div class="pos-quick-checkout" id="posQuickCheckout">
+        <div class="pos-quick-checkout__info">
+          <span class="pos-quick-checkout__label">${escapeHtml(activeTable.name)} total</span>
+          <span class="pos-quick-checkout__amount serif" id="posQuickTotal">${money(grandTotal)}</span>
+        </div>
+        <button type="button" class="btn-primary pos-quick-checkout__btn" id="posQuickCheckoutBtn">
+          Go to billing
+        </button>
       </div>
     </div>
   `;
@@ -319,6 +330,15 @@ export function renderPosView(container, uiState, rerender) {
     uiState.discount = Math.max(0, Number(event.target.value || 0));
     rerender();
   };
+
+  const quickCheckoutBtn = document.getElementById('posQuickCheckoutBtn');
+  if (quickCheckoutBtn) {
+    quickCheckoutBtn.onclick = () => {
+      const billing = document.getElementById('posBilling');
+      if (!billing) return;
+      billing.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+  }
 
   document.getElementById('fire-kot-btn').onclick = () => {
     if (!activeTable.items.length) return;
